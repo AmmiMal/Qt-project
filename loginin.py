@@ -69,6 +69,17 @@ class Ui_Form_logg(object):
         self.pushButton_inp.setStyleSheet("color: rgb(39, 0, 58);\n"
 "background-color: rgb(170, 170, 255);")
         self.pushButton_inp.setObjectName("pushButton_inp")
+        self.pushButton_back = QtWidgets.QPushButton(Form)
+        self.pushButton_back.setGeometry(QtCore.QRect(320, 20, 93, 28))
+        font = QtGui.QFont()
+        font.setFamily("Gabriola")
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.pushButton_back.setFont(font)
+        self.pushButton_back.setStyleSheet("color: rgb(39, 0, 58);\n"
+"background-color: rgb(170, 170, 255);")
+        self.pushButton_back.setObjectName("pushButton_back")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -79,3 +90,4 @@ class Ui_Form_logg(object):
         self.label_2.setText(_translate("Form", "Login:"))
         self.label_3.setText(_translate("Form", "Password:"))
         self.pushButton_inp.setText(_translate("Form", "Войти"))
+        self.pushButton_back.setText(_translate("Form", "Назад"))

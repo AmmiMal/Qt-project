@@ -2,6 +2,7 @@ import sys
 import sqlite3
 import datetime
 import csv
+import webbrowser
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QWidget, QHeaderView, QMessageBox, QLabel, \
     QFileDialog, QLineEdit, QSizePolicy
@@ -48,6 +49,7 @@ class Avtoriz(QWidget, Ui_Form_logg):
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.lineEdit_pas.setEchoMode(QLineEdit.Password)
         self.pushButton_inp.clicked.connect(self.next)
+        self.pushButton_back.clicked.connect(self.back)
 
     def next(self):
         self.log = self.lineEdit_log.text()
@@ -70,20 +72,38 @@ class Avtoriz(QWidget, Ui_Form_logg):
         else:
             self.con = sqlite3.connect("project_qt.sqlite")
             self.cur = self.con.cursor()
-            self.result = self.cur.execute("""SELECT course FROM PurchasedCourses
-                     WHERE login = ?""", (self.log,)).fetchall()
-            self.res = self.cur.execute("""SELECT password FROM UserData
-                     WHERE login = ?""", (self.log,)).fetchall()
-            if self.pas == self.res[0][0]:
-                self.closeForm()
-                self.course = Course(self.result[0][0], self.log)
-                self.course.show()
-            else:
+            self.ress = self.cur.execute("""SELECT login FROM PurchasedCourses""").fetchall()
+            res = []
+            for i in self.ress:
+                res.append(i[0])
+            try:
+                self.result = self.cur.execute("""SELECT course FROM PurchasedCourses
+                         WHERE login = ?""", (self.log,)).fetchall()
+                self.res = self.cur.execute("""SELECT password FROM UserData
+                         WHERE login = ?""", (self.log,)).fetchall()
+                if self.pas == self.res[0][0]:
+                    self.closeForm()
+                    self.course = Course(self.result[0][0], self.log)
+                    self.course.show()
+                else:
+                    mes1 = QMessageBox()
+                    mes1.setWindowTitle('')
+                    mes1.setText("Неверный пароль")
+                    mes1.setStandardButtons(QMessageBox.Cancel)
+                    mes1.exec_()
+            except IndexError:
                 mes1 = QMessageBox()
                 mes1.setWindowTitle('')
-                mes1.setText("Неверный пароль")
+                mes1.setText("Логин не существует")
                 mes1.setStandardButtons(QMessageBox.Cancel)
                 mes1.exec_()
+
+
+    def back(self):
+        self.closeForm()
+        self.backk = Input()
+        self.backk.show()
+
 
     def closeForm(self):
         self.close()
@@ -129,7 +149,6 @@ class Courses(QMainWindow, Ui_MainWindow, Ui_Form):
     def __init__(self, parent=None):
         super(Courses, self).__init__(parent)
         self.setupUi(self)
-        self.setWindowFlag(Qt.FramelessWindowHint)
         self.con = sqlite3.connect("project_qt.sqlite")
         cur = self.con.cursor()
         result = cur.execute("""SELECT name FROM Courses""").fetchall()
@@ -168,6 +187,7 @@ class Courses(QMainWindow, Ui_MainWindow, Ui_Form):
             self.mes = '3'
         self.Detailed = Detailed(self.mes)
         self.Detailed.show()
+        self.closeForm()
 
     def oplata(self):
         if self.sender() == self.oplata1:
@@ -322,6 +342,12 @@ class Authorization(QWidget, Ui_Form_logining):
         self.con = sqlite3.connect("project_qt.sqlite")
         self.cur = self.con.cursor()
         self.next.clicked.connect(self.n)
+        mes1 = QMessageBox()
+        mes1.setWindowTitle('')
+        mes1.setText("Пароль должен соответствовать правилам: длина не меньше 8 символов; есть большие и маленькие"
+                     "буквы, цифры; нет ни одной комбинации из 3 буквенных символов, стоящих рядом в строке клавиатуры")
+        mes1.setStandardButtons(QMessageBox.Cancel)
+        mes1.exec_()
 
     def n(self):
         n = self.lineEdit_name.text()
@@ -382,14 +408,6 @@ class Authorization(QWidget, Ui_Form_logining):
         self.close()
 
 
-class Hyperlinklabel(QLabel):
-    def __init__(self, parent=None):
-        super().__init__()
-        self.setStyleSheet('font-size: 35px')
-        self.setOpenExternalLinks(True)
-        self.setParent(parent)
-
-
 class Course(QWidget, Ui_Form_course):
     def __init__(self, mes, log):
         super(Course, self).__init__()
@@ -397,6 +415,7 @@ class Course(QWidget, Ui_Form_course):
         self.log = log
         self.mes = mes
         self.setupUi(self)
+        self.setWindowTitle('Ваш курс')
         self.label_name.setText(self.mes)
         self.textEdit.setText(self.log)
         self.textEdit.setReadOnly(True)
@@ -464,7 +483,7 @@ class Course(QWidget, Ui_Form_course):
 
     def res_(self):
         if self.sender() == self.pushButton_watch_1:
-            self.result = '1'
+            self.mes2 = '1'
         if self.sender() == self.pushButton_watch_2:
             self.mes2 = '2'
         if self.sender() == self.pushButton_watch_3:
@@ -484,7 +503,6 @@ class Course(QWidget, Ui_Form_course):
             self.mes5 = self.result[2][0]
         if self.sender() == self.pushButton_send4:
             self.mes5 = self.result[3][0]
-        print(fname, type(fname))
         self.cur.execute("INSERT INTO FinishedWorks (lesson, login, work) VALUES(?, ?, ?)",
                          (self.mes5, self.log, fname))
         self.con.commit()
@@ -493,48 +511,35 @@ class Course(QWidget, Ui_Form_course):
         self.close()
 
 
-class Button_link(QWidget):
+class Button_link():
     def __init__(self, mes, course):
         super(Button_link, self).__init__()
-        link = '<a href={0}>{1}</a>'
         if mes == '1' and course == 'Акварель':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/ZfOn19CWhbA', 'Введение. Вспоминаем основы живописи'))
+            webbrowser.open('https://youtu.be/ZfOn19CWhbA')
         elif mes == '2' and course == 'Акварель':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/2H18HZMoA08', 'Учимся писать металл'))
+            webbrowser.open('https://youtu.be/2H18HZMoA08')
         elif mes == '3' and course == 'Акварель':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/QrkXOH0Dumw', 'Как писать стекло'))
+            webbrowser.open('https://youtu.be/QrkXOH0Dumw')
         elif mes == '4' and course == 'Акварель':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/_yex7RQwJDo', 'Итоговая: постановка с металлом и стеклом'))
+            webbrowser.open('https://youtu.be/_yex7RQwJDo')
 
         elif mes == '1' and course == 'Графика':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/wNy2qyVDXSU', 'Штрих. Построение шара и его штриховка'))
+            webbrowser.open('https://youtu.be/wNy2qyVDXSU')
         elif mes == '2' and course == 'Графика':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/EzLvyvoLpbc', 'Перспектива'))
+            webbrowser.open('https://youtu.be/EzLvyvoLpbc')
         elif mes == '3' and course == 'Графика':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/lLWzD2q_2no', 'Зарисовка крыльца в перспективе'))
+            webbrowser.open('ttps://youtu.be/lLWzD2q_2no')
         elif mes == '4' and course == 'Графика':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/3je3d3m76c0', 'Зарисовка деревянной скульптуры'))
+            webbrowser.open('https://youtu.be/3je3d3m76c0')
 
         elif mes == '1' and course == 'Масло':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/V0_iJhTuwuQ', 'Введение в материалы'))
+            webbrowser.open('https://youtu.be/V0_iJhTuwuQ')
         elif mes == '2' and course == 'Масло':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/9EIXAM1o6Gg', 'Живопись мастихином'))
+            webbrowser.open('https://youtu.be/9EIXAM1o6Gg')
         elif mes == '3' and course == 'Масло':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/u8ul67p7Hbw', 'Пейзаж с горами'))
+            webbrowser.open('https://youtu.be/u8ul67p7Hbw')
         elif mes == '4' and course == 'Масло':
-            label1 = Hyperlinklabel(self)
-            label1.setText(link.format('https://youtu.be/bY2jYShjcBA', 'Пейзаж. Закат на озере'))
+            webbrowser.open('https://youtu.be/bY2jYShjcBA')
 
 
 def except_hook(cls, exception, traceback):
